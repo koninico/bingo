@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>抽選画面</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;   /* 横中央 */
+      align-items: center;       /* 縦中央（上寄せにしたい場合は flex-start に） */
+      background: #ffffff;
+    }
+
+    /* ★ ここが重要：全パーツの基準箱 */
+    .main {
+      width: 95%;
+      max-width: 1200px;
+      text-align: center;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* 子要素も中央揃え */
+      gap: 10px;
+      padding: 16px 12px;
+      box-sizing: border-box;
+    }
+
+    h1 { margin: 0 0 6px; }
+
+    .status { color:#555; margin: 0 0 6px; }
+
+    .big {
+      font-size: 140px;
+      font-weight: 900;
+      margin: 6px 0 0;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+
+    .remain { font-size: 20px; margin: 4px 0 6px; }
+
+    /* ★ ここが重要：ボタン列を中央寄せ */
+    .row {
+      display:flex;
+      justify-content: center;
+      gap:10px;
+      flex-wrap:wrap;
+      width: 100%;
+      margin: 6px 0 8px;
+    }
+
+    button { font-size: 20px; padding: 10px 14px; }
+    button[disabled] { opacity: 0.5; }
+
+    /* BINGO表 */
+    .bingo {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      max-width: 520px;
+
+      /* ★ ここが重要：箱自体を中央に */
+      margin: 6px auto 0;
+    }
+
+    .col { border:1px solid #ccc; }
+
+    .col h3 {
+      text-align:center; margin:0; padding:6px 0;
+      background:#f0f0f0; font-weight:800;
+    }
+
+    .nums {
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:4px;
+      padding:6px;
+    }
+
+    .cell {
+      text-align:center;
+      padding:6px 0;
+      border-radius:4px;
+      background:#fafafa;
+      font-weight:600;
+    }
+
+    .cell.hit {
+      background:#ffeb3b; /* ★ 背景を塗る（E1） */
+      color:#000;
+    }
+
+    /* ★ 今の数字（current）を目立たせる（G2も兼ねる） */
+    .cell.current {
+      outline: 4px solid #000;
+      transform: scale(1.03);
+    }
+
+    /* ★ 今の数字を一瞬だけパルス（G2） */
+    @keyframes pulse {
+      0% { transform: scale(1.00); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1.00); }
+    }
+    .big.pulse {
+      animation: pulse 240ms ease-in-out 2;
+    }
+
+    /* ★ ended用の表示 */
+    .badge-ended{
+      display:inline-block;
+      padding:2px 8px;
+      border:1px solid #bbb;
+      border-radius:999px;
+      font-size:12px;
+      margin-left:8px;
+      background:#f5f5f5;
+    }
+
+    /* 履歴（引いた順） */
+    .history {
+      font-size:14px;
+      line-height:1.6;
+      max-width: 520px;
+      color:#333;
+
+      /* ★ ここが重要：箱を中央に */
+      margin: 4px auto 0;
+    }
+
+    .history span {
+      display:inline-block;
+      margin-right:6px;
+    }
+
+    details {
+      max-width: 520px;
+
+      /* ★ ここが重要：箱を中央に */
+      margin: 6px auto 0;
+      width: 100%;
+    }
+
+    pre { background:#f3f3f3; padding:8px; white-space:pre-wrap; }
+
+    @keyframes boom {
+      0% { transform: scale(0.6); opacity:0; }
+      60% { transform: scale(1.2); opacity:1; }
+      100% { transform: scale(1); }
+    }
+
+    .big.boom {
+      animation: boom 400ms ease-out;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main">
+    <h1>抽選画面</h1>
+
+    <div class="status" id="statusLine">読み込み中...</div>
+    <div class="big" id="current">--</div>
+    <div class="remain">残り：<span id="remaining">--</span></div>
+
+    <div class="row" id="controls">
+      <button id="btnStart">開始</button>
+      <button id="btnDraw">次（Enter）</button>
+      <button id="btnUndo">戻す（U）</button>
+      <button id="btnEnd">終了（E）</button>
+      <button id="btnBack">管理へ</button>
+    </div>
+
+    <!-- BINGO 表 -->
+    <div class="bingo" id="bingo"></div>
+
+    <!-- 履歴（引いた順） -->
+    <div class="history" id="history"></div>
+
+    <details>
+      <summary>デバッグ（state）</summary>
+      <pre id="out"></pre>
+    </details>
+
+    <audio id="popSound" preload="auto">
+      <source src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" type="audio/ogg">
+    </audio>
+
+    <script>
+      const elStatus = document.getElementById("statusLine");
+      const elCurrent = document.getElementById("current");
+      const elRemaining = document.getElementById("remaining");
+      const elBingo = document.getElementById("bingo");
+      const elHistory = document.getElementById("history");
+      const out = document.getElementById("out");
+      const btnStart = document.getElementById("btnStart");
+      const btnDraw  = document.getElementById("btnDraw");
+      const btnUndo  = document.getElementById("btnUndo");
+      const btnEnd   = document.getElementById("btnEnd");
+
+      let state = null;
+      let drawing = false; // ★ 連打防止
+
+      async function api(path, method="GET", body=null) {
+        const opt = { method, headers: {} };
+        if (body) {
+          opt.headers["Content-Type"] = "application/json";
+          opt.body = JSON.stringify(body);
+        }
+        const res = await fetch(path, opt);
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok || j.ok === false) {
+          throw new Error(j.error || `HTTP ${res.status}`);
+        }
+        return j;
+      }
+
+      function setButtons() {
+        if (!state) {
+          btnStart.disabled = true;
+          btnDraw.disabled  = true;
+          btnUndo.disabled  = true;
+          btnEnd.disabled   = true;
+          return;
+        }
+        const running = state.status === "running";
+        const ended   = state.status === "ended";
+        btnStart.disabled = ended || running || drawing;
+        btnDraw.disabled  = !running || ended || drawing;
+        btnUndo.disabled  = !running || ended || drawing || (state.drawnOrder?.length ?? 0) === 0;
+        btnEnd.disabled   = ended || !running || drawing;
+      }
+
+      function renderBingo() {
+        elBingo.innerHTML = "";
+        if (!state) return;
+
+        const used = new Set(state.drawnOrder || []);
+        const cols = [
+          { name:"B", from:1,  to:15 },
+          { name:"I", from:16, to:30 },
+          { name:"N", from:31, to:45 },
+          { name:"G", from:46, to:60 },
+          { name:"O", from:61, to:75 },
+        ];
+
+        for (const c of cols) {
+          const col = document.createElement("div");
+          col.className = "col";
+
+          const h = document.createElement("h3");
+          h.textContent = c.name;
+          col.appendChild(h);
+
+          const nums = document.createElement("div");
+          nums.className = "nums";
+
+          for (let n = c.from; n <= c.to; n++) {
+            const d = document.createElement("div");
+            const isHit = used.has(n);
+            const isCur = (state.currentNumber === n);
+            d.className = "cell" + (isHit ? " hit" : "") + (isCur ? " current" : "");
+            d.textContent = n;
+            nums.appendChild(d);
+          }
+
+          col.appendChild(nums);
+          elBingo.appendChild(col);
+        }
+      }
+
+      function toLabel(n) {
+        if (1 <= n && n <= 15) return `B-${n}`;
+        if (16 <= n && n <= 30) return `I-${n}`;
+        if (31 <= n && n <= 45) return `N-${n}`;
+        if (46 <= n && n <= 60) return `G-${n}`;
+        if (61 <= n && n <= 75) return `O-${n}`;
+        return String(n);
+      }
+
+      function renderHistory() {
+        elHistory.innerHTML = "";
+        if (!state || !state.drawnOrder) return;
+        const arr = state.drawnOrder.slice(); // 引いた順
+        for (const n of arr) {
+          const s = document.createElement("span");
+          s.textContent = toLabel(n);
+          elHistory.appendChild(s);
+        }
+      }
+
+      function render() {
+        if (!state) {
+          elCurrent.textContent = "--";
+          elRemaining.textContent = "--";
+          out.textContent = "";
+          setButtons();
+          elBingo.innerHTML = "";
+          elHistory.innerHTML = "";
+          return;
+        }
+
+        if (state.status === "ended") {
+          elStatus.innerHTML = `イベント：${state.eventName} / 状態：${state.status} <span class="badge-ended">結果表示専用</span>`;
+        } else {
+          elStatus.textContent = `イベント：${state.eventName} / 状態：${state.status}`;
+        }
+
+        elCurrent.textContent = state.currentLabel || "--";
+        elRemaining.textContent = String(state.remainingCount ?? "--");
+        out.textContent = JSON.stringify(state, null, 2);
+
+        renderBingo();
+        renderHistory();
+        setButtons();
+
+        if (state.status === "ended") {
+          // 結果表示専用：操作系を隠す（管理へは残す）
+          btnStart.style.display = "none";
+          btnDraw.style.display  = "none";
+          btnUndo.style.display  = "none";
+          btnEnd.style.display   = "none";
+        } else {
+          btnStart.style.display = "";
+          btnDraw.style.display  = "";
+          btnUndo.style.display  = "";
+          btnEnd.style.display   = "";
+        }
+
+        // 演出：ドン
+        elCurrent.classList.remove("boom");
+        void elCurrent.offsetWidth;
+        elCurrent.classList.add("boom");
+
+        // 残り10個で背景色
+        if (state.remainingCount <= 10 && state.status === "running") {
+          document.body.style.background = "#fff3cd";
+        } else {
+          document.body.style.background = "#ffffff";
+        }
+      }
+
+      async function load() {
+        const j = await api("/api/state");
+        state = j.state;
+        render();
+      }
+
+      async function start() {
+        const j = await api("/api/start", "POST");
+        state = j.state;
+        render();
+      }
+
+      // ★ 1秒シャッフル演出（競合防止版）
+      async function draw() {
+        if (drawing) return;
+        drawing = true;
+        setButtons();
+
+        const duration = state?.ui?.animationMs ?? 1000;
+        const startTs = performance.now();
+        const timer = setInterval(() => {
+          const r = Math.floor(Math.random() * 75) + 1;
+          elCurrent.textContent = r; // 演出中の仮表示
+          if (performance.now() - startTs >= duration) {
+            clearInterval(timer);
+          }
+        }, 80);
+
+        setTimeout(async () => {
+          clearInterval(timer);
+          try {
+            const j = await api("/api/draw", "POST");
+            state = j.state;
+          } catch (e) {
+            alert(e.message);
+          } finally {
+            drawing = false;
+            render();
+            document.getElementById("popSound").play().catch(()=>{});
+          }
+
+          // パルス
+          elCurrent.classList.remove("pulse");
+          void elCurrent.offsetWidth;
+          elCurrent.classList.add("pulse");
+        }, duration);
+      }
+
+      async function undo() {
+        if (state?.ui?.confirmUndo ?? true) {
+          if (!confirm("直前の1回を取り消します。よろしいですか？")) return;
+        }
+        const j = await api("/api/undo", "POST");
+        state = j.state;
+        render();
+      }
+
+      async function end() {
+        if (state?.ui?.confirmEnd ?? true) {
+          if (!confirm("抽選を終了します。よろしいですか？")) return;
+        }
+        const j = await api("/api/end", "POST");
+        state = j.state;
+        render();
+      }
+
+      // ボタン
+      btnStart.addEventListener("click", start);
+      btnDraw.addEventListener("click", draw);
+      btnUndo.addEventListener("click", undo);
+      btnEnd.addEventListener("click", end);
+      document.getElementById("btnBack").addEventListener("click", () => location.href = "/");
+
+      // キー操作
+      window.addEventListener("keydown", (ev) => {
+        if (ev.repeat) return;
+        if (ev.key === "Enter" && state?.status === "running") { ev.preventDefault(); draw(); }
+        if ((ev.key === "u" || ev.key === "U") && state?.status === "running") { ev.preventDefault(); undo(); }
+        if ((ev.key === "e" || ev.key === "E") && state?.status === "running") { ev.preventDefault(); end(); }
+      });
+
+      load().catch(err => {
+        elStatus.textContent = `エラー: ${err.message}`;
+      });
+    </script>
+  </div>
+</body>
+</html>
