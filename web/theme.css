@@ -1,0 +1,176 @@
+/* web/theme.css  落ち着きポップ（アイボリー＋アクセント） */
+
+:root{
+  --bg: #F9F5ED;
+
+  --mustard: #F4BF36;
+  --lime:    #D8F043;
+  --coral:   #F87B79;
+  --sky:     #65BFDC;
+  --mint:    #6CE38D;
+
+  --text: #222;
+  --muted:#666;
+
+  --card: rgba(255,255,255,0.70);
+  --line: rgba(0,0,0,0.14);
+
+  --shadow: 0 10px 24px rgba(0,0,0,0.10);
+  --shadow2: 0 6px 14px rgba(0,0,0,0.08);
+  --radius: 18px;
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  height: 100%;
+}
+
+body{
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* 背景の薄い飾り（落ち着きポップ） */
+body::before, body::after{
+  content:"";
+  position: fixed;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  opacity: 0.25;
+  z-index: -1;
+}
+body::before{
+  top: -70px; left: -70px;
+  background: var(--mint);
+}
+body::after{
+  bottom: -80px; right: -80px;
+  background: var(--coral);
+}
+
+/* コンテナ（カード） */
+.container{
+  width: min(1100px, 95vw);
+  margin: 0 auto;
+  padding: 16px 12px;
+}
+
+.card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 16px;
+}
+
+.h1{
+  margin: 0 0 10px;
+  font-size: clamp(26px, 3.5vw, 42px);
+  letter-spacing: 0.5px;
+}
+
+.muted{
+  color: var(--muted);
+}
+
+/* ボタン（共通） */
+.btn{
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 18px;
+  font-weight: 800;
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.10);
+  cursor: pointer;
+}
+
+.btn:active{
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.10);
+}
+
+.btn[disabled]{
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ボタン色（用途別） */
+.btn-sky{ background: var(--sky); }
+.btn-coral{ background: var(--coral); }
+.btn-mustard{ background: var(--mustard); }
+.btn-mint{ background: var(--mint); }
+
+/* 入力 */
+.input{
+  width: 100%;
+  max-width: 340px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.90);
+  font-size: 16px;
+}
+
+/* ラベルとフォーム行 */
+.form-row{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.label{
+  font-weight: 800;
+  color: var(--muted);
+  min-width: 120px;
+}
+
+/* テーブル（過去イベント） */
+.table-wrap{
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.85);
+  box-shadow: var(--shadow2);
+}
+
+table{
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 720px;
+}
+
+th, td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.10);
+  text-align: left;
+  white-space: nowrap;
+}
+
+th{
+  background: rgba(249,245,237,0.9);
+  font-weight: 900;
+}
+
+.badge{
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.75);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.badge-ended{ background: rgba(101,191,220,0.35); }
+.badge-running{ background: rgba(216,240,67,0.45); }
+.badge-ready{ background: rgba(244,191,54,0.35); }

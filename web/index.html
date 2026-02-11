@@ -4,70 +4,82 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>管理画面</title>
+  <link rel="stylesheet" href="/theme.css">
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
-    h1 { margin-bottom: 8px; }
-    .box { border:1px solid #ddd; padding:10px; margin:12px 0; border-radius:6px; max-width:840px; }
-    button { font-size:16px; padding:8px 12px; margin-right:8px; }
-    .muted { color:#666; }
-    pre { background:#f3f3f3; padding:8px; white-space:pre-wrap; }
-
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border:1px solid #ddd; padding:6px 8px; font-size:14px; }
-    th { background:#f5f5f5; text-align:left; }
-    .actions button { font-size:14px; padding:6px 10px; }
+    /* index専用の少量だけ */
+    .stack { display: grid; gap: 14px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    details { margin-top: 10px; }
+    pre { background:#f3f3f3; padding:10px; white-space:pre-wrap; border-radius: 12px; border:1px solid rgba(0,0,0,0.12); }
   </style>
 </head>
+
 <body>
-  <h1>管理画面</h1>
-
-  <!-- 続きから / 最初から -->
-  <div class="box">
-    <h2 style="margin:0 0 8px;">起動時の選択</h2>
-    <div class="muted" id="resumeInfo">読み込み中...</div>
-    <p>
-      <button id="btnResume">続きから（抽選へ）</button>
-      <button id="btnReset">最初から（続きデータ破棄）</button>
-    </p>
-    <div class="muted">※「最初から」は latest.json を消します。イベント履歴ファイルは残ります。</div>
-  </div>
-
-  <!-- 新規イベント作成 -->
-  <div class="box">
-    <h2 style="margin:0 0 8px;">新規イベント作成</h2>
-    <div>
-      <label>
-        イベント名：
-        <input id="eventName" value="柳町子ども会ビンゴ" />
-      </label>
-    </div>
-    <div style="margin-top:6px;">
-      <label>
-        当選者数（目安）：
-        <input id="winnersTarget" type="number" value="10" min="0" />
-      </label>
+  <div class="container">
+    <div class="card">
+      <h1 class="h1">管理画面</h1>
+      <div class="muted">起動時の選択 / 新規イベント作成 / 過去イベント一覧</div>
     </div>
 
-    <p style="margin-top:10px;">
-      <button id="btnNew">新規イベント作成</button>
-      <button id="btnOpenDraw">抽選画面へ</button>
-    </p>
-  </div>
+    <div class="stack" style="margin-top:14px;">
 
-  <!-- 過去イベント一覧 -->
-  <div class="box">
-    <h2 style="margin:0 0 8px;">過去イベント一覧</h2>
-    <div class="muted" style="margin-bottom:8px;">「これを開く」で、そのイベントを latest にして「続きから」できます。</div>
-    <p>
-      <button id="btnReloadEvents">一覧を更新</button>
-    </p>
-    <div id="eventsArea" class="muted">読み込み中...</div>
-  </div>
+      <!-- 続きから / 最初から -->
+      <div class="card">
+        <h2 style="margin:0 0 10px;">起動時の選択</h2>
+        <div class="muted" id="resumeInfo">読み込み中...</div>
 
-  <details>
-    <summary>デバッグ（API応答）</summary>
-    <pre id="out"></pre>
-  </details>
+        <div class="actions" style="margin-top:12px;">
+          <button class="btn btn-sky" id="btnResume">続きから（抽選へ）</button>
+          <button class="btn btn-coral" id="btnReset">最初から（続きデータ破棄）</button>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          ※「最初から」は latest.json を消します。イベント履歴ファイルは残ります。
+        </div>
+      </div>
+
+      <!-- 新規イベント作成 -->
+      <div class="card">
+        <h2 style="margin:0 0 10px;">新規イベント作成</h2>
+
+        <div class="form-row">
+          <div class="label">イベント名</div>
+          <input class="input" id="eventName" value="柳町子ども会ビンゴ" />
+        </div>
+
+        <div class="form-row">
+          <div class="label">当選者数（目安）</div>
+          <input class="input" id="winnersTarget" type="number" value="10" min="0" />
+        </div>
+
+        <div class="actions" style="margin-top:12px;">
+          <button class="btn btn-mustard" id="btnNew">新規イベント作成</button>
+          <button class="btn btn-mint" id="btnOpenDraw">抽選画面へ</button>
+        </div>
+      </div>
+
+      <!-- 過去イベント一覧 -->
+      <div class="card">
+        <h2 style="margin:0 0 10px;">過去イベント一覧</h2>
+        <div class="muted" style="margin-bottom:10px;">
+          「これを開く」で、そのイベントを latest にして「続きから」できます。
+        </div>
+
+        <div class="actions" style="margin-bottom:12px;">
+          <button class="btn" id="btnReloadEvents">一覧を更新</button>
+        </div>
+
+        <!-- ここにテーブルを描画（renderEventsで table-wrap を付ける） -->
+        <div id="eventsArea" class="muted">読み込み中...</div>
+      </div>
+
+      <details class="card">
+        <summary style="font-weight:900;">デバッグ（API応答）</summary>
+        <pre id="out"></pre>
+      </details>
+
+    </div>
+  </div>
 
   <script>
     const out = document.getElementById("out");
@@ -105,8 +117,13 @@
         btnResume.textContent = (state.status === "ended")
           ? "結果を見る（抽選へ）"
           : "続きから（抽選へ）";
-
       }
+    }
+
+    function badgeClass(status){
+      if (status === "ended") return "badge badge-ended";
+      if (status === "running") return "badge badge-running";
+      return "badge badge-ready";
     }
 
     function renderEvents() {
@@ -127,32 +144,36 @@
             <td>${idx + 1}</td>
             <td>${name}</td>
             <td>${created}</td>
-            <td>${status}</td>
+            <td><span class="${badgeClass(status)}">${status}</span></td>
             <td>${drawCount}</td>
             <td>${remain}</td>
-            <td class="actions">
-              <button data-use="${encodeURIComponent(e.eventFile)}">これを開く</button>
-              <button data-del="${encodeURIComponent(e.eventFile)}">削除</button>
+            <td>
+              <div class="actions">
+                <button class="btn btn-sky" data-use="${encodeURIComponent(e.eventFile)}">これを開く</button>
+                <button class="btn btn-coral" data-del="${encodeURIComponent(e.eventFile)}">削除</button>
+              </div>
             </td>
           </tr>
         `;
       }).join("");
 
       eventsArea.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>イベント名</th>
-              <th>作成日時</th>
-              <th>状態</th>
-              <th>引いた数</th>
-              <th>残り</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>イベント名</th>
+                <th>作成日時</th>
+                <th>状態</th>
+                <th>引いた数</th>
+                <th>残り</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       `;
 
       // ボタン配線
@@ -177,8 +198,8 @@
           try {
             const j = await api("/api/delete", "POST", { eventFile });
             out.textContent = JSON.stringify(j, null, 2);
-            await refreshState();   // latestが消えた可能性があるので再取得
-            await refreshEvents();  // 一覧更新
+            await refreshState();
+            await refreshEvents();
             alert("削除しました。");
           } catch (e) {
             alert(e.message);
@@ -198,7 +219,6 @@
       const j = await api("/api/events");
       events = j.events || [];
       renderEvents();
-      // out.textContent は state の方を優先したいのでここでは触らない
     }
 
     async function apiNewEvent() {

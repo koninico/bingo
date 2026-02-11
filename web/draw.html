@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/theme.css">
+
   <title>抽選画面</title>
   <style>
     body {
@@ -33,15 +35,26 @@
 
     .status { color:#555; margin: 0 0 6px; }
 
+    /* ★ 追加：抽選番号＋残り を “中央の塊” にする */
+    .number-area{
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: 6px 0 2px;
+    }
+
     .big {
       font-size: 140px;
       font-weight: 900;
-      margin: 6px 0 0;
+      margin: 0;
       letter-spacing: 2px;
       line-height: 1;
     }
 
-    .remain { font-size: 20px; margin: 4px 0 6px; }
+    .remain { font-size: 20px; margin: 6px 0 6px; }
 
     /* ★ ここが重要：ボタン列を中央寄せ */
     .row {
@@ -160,19 +173,23 @@
 </head>
 
 <body>
-  <div class="main">
+  <div class="container"><div class="card">
     <h1>抽選画面</h1>
 
     <div class="status" id="statusLine">読み込み中...</div>
-    <div class="big" id="current">--</div>
-    <div class="remain">残り：<span id="remaining">--</span></div>
+
+    <!-- ★ 変更：番号＋残りを中央ブロック化 -->
+    <div class="number-area">
+      <div class="big" id="current">--</div>
+      <div class="remain">残り：<span id="remaining">--</span></div>
+    </div>
 
     <div class="row" id="controls">
-      <button id="btnStart">開始</button>
-      <button id="btnDraw">次（Enter）</button>
-      <button id="btnUndo">戻す（U）</button>
-      <button id="btnEnd">終了（E）</button>
-      <button id="btnBack">管理へ</button>
+      <button class="btn" id="btnStart">開始</button>
+      <button class="btn btn-sky" id="btnDraw">次（Enter）</button>
+      <button class="btn btn-coral" id="btnUndo">戻す（U）</button>
+      <button class="btn btn-mustard" id="btnEnd">終了（E）</button>
+      <button class="btn btn-mint" id="btnBack">管理へ</button>
     </div>
 
     <!-- BINGO 表 -->
@@ -429,6 +446,6 @@
         elStatus.textContent = `エラー: ${err.message}`;
       });
     </script>
-  </div>
+  </div></div>
 </body>
 </html>
